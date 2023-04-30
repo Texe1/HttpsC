@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "HTTP_CONSTANTS.h"
+#include "http_constants.h"
 
 typedef enum http_req_err {
   NO_ERR = 0,
