@@ -4,13 +4,6 @@
 
 #include "constants.h"
 
-typedef enum http_req_err {
-  NO_ERR = 0,
-  GENERIC,
-  REQ_WRONG_FORMAT,
-  OUT_OF_HEAP,
-} HTTP_REQ_ERR;
-
 typedef struct http_request {
   HTTP_METHOD method;
   HTTP_VERSION version;
@@ -18,9 +11,10 @@ typedef struct http_request {
 
   char *header[NUM_HTTP_REQ_HEADERS];
 
+  uint max_body_len;
   char *body;
 
-  HTTP_REQ_ERR err;
+  int err;
 
 } HTTP_REQUEST;
 
