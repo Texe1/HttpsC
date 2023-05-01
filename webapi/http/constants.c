@@ -1,3 +1,4 @@
+#define DEFINE_ARRAYS
 #include "constants.h"
 
 const char *HTTP_REQ_HEADER_STRS[NUM_HTTP_REQ_HEADERS] = {

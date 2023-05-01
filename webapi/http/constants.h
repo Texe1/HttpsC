@@ -184,3 +184,13 @@ typedef enum http_res_header_field_type {
   X_FRAME_OPTIONS,
   NUM_HTTP_RES_HEADERS,
 } HTTP_RES_HEADER_FIELD_TYPE;
+
+#ifndef DEFINE_ARRAYS
+
+extern const char *HTTP_REQ_HEADER_STRS[];
+extern const char *HTTP_RES_HEADER_STRS[];
+extern const char *HTTP_METHOD_STRS[];
+extern const char *HTTP_STATUS_STRS[];
+extern const char *HTTP_VERSION_STRS[];
+
+#endif
