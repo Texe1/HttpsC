@@ -1,9 +1,6 @@
 #include "request.h"
 
-
 #include <stdio.h>
-
-
 
 void printRequest(HTTP_REQUEST req) {
   printf("%s %s HTTP/%s\n", HTTP_METHOD_STRS[req.method], req.path,
