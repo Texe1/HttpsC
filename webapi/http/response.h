@@ -2,13 +2,13 @@
 
 #include <stdlib.h>
 
-#include "HTTP_CONSTANTS.h"
+#include "constants.h"
 
 typedef struct http_response {
   HTTP_VERSION version;
   HTTP_STATUS status;
 
-  char *headers[NUM_RES_HEADERS];
+  char *headers[NUM_HTTP_RES_HEADERS];
 
   uint max_body_sz;
   char *body;

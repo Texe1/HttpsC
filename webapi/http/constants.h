@@ -3,7 +3,7 @@
 typedef enum http_status {
   // 1xx Informational response
   CONTINUE,
-  SEITCHING_PROTOCOLS,
+  SWITCHING_PROTOCOLS,
   PROCESSING,
   EARLY_HINTS,
 
@@ -74,6 +74,7 @@ typedef enum http_status {
   NOT_EXTENDED,
   NETWORK_AUTHENTICATION_REQUIRED,
 
+  NUM_HTTP_STATUS_CODES,
 } HTTP_STATUS;
 
 typedef enum http_method {
@@ -84,7 +85,8 @@ typedef enum http_method {
   DELETE,
   CONNECT,
   OPTIONS,
-  TRACE
+  TRACE,
+  NUM_HTTP_METHODS
 } HTTP_METHOD;
 
 typedef enum http_version {
@@ -92,6 +94,7 @@ typedef enum http_version {
   HTTP1_1,
   HTTP2_0,
   HTTP3_0,
+  NUM_HTTP_VERSIONS,
 } HTTP_VERSION;
 
 typedef enum http_header_field_type {
@@ -108,11 +111,11 @@ typedef enum http_header_field_type {
   UPGRADE,
   VIA,
   WARNING,
-  NUM_UNVERSAL_HEADERS,
+  NUM_UNVERSAL_HTTP_HEADERS,
 } HTTP_HEADER_FIELD_TYPE;
 
 typedef enum http_req_header_field_type {
-  A_IM = NUM_UNVERSAL_HEADERS,
+  A_IM = NUM_UNVERSAL_HTTP_HEADERS,
   ACCEPT,
   ACCEPT_CHARSET,
   ACCEPT_DATETIME,
@@ -140,11 +143,11 @@ typedef enum http_req_header_field_type {
   REFERER,
   TE,
   USER_AGENT,
-  NUM_REQ_HEADERS,
+  NUM_HTTP_REQ_HEADERS,
 } HTTP_REQ_HEADER_FIELD_TYPE;
 
 typedef enum http_res_header_field_type {
-  ACCEPT_CH = NUM_UNVERSAL_HEADERS,
+  ACCEPT_CH = NUM_UNVERSAL_HTTP_HEADERS,
   ACCEPT_PATCH,
   ACCEPT_RANGES,
   ACCESS_CONTROL_ALLOW_CREDENTIALS,
@@ -179,5 +182,5 @@ typedef enum http_res_header_field_type {
   VARY,
   WWW_AUTHENTICATE,
   X_FRAME_OPTIONS,
-  NUM_RES_HEADERS,
+  NUM_HTTP_RES_HEADERS,
 } HTTP_RES_HEADER_FIELD_TYPE;

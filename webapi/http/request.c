@@ -3,55 +3,12 @@
 #include <stdio.h>
 #include <string.h>
 
-const char *METHOD_STRS[] = {"GET",    "HEAD",    "POST",    "PUT",
-                             "DELETE", "CONNECT", "OPTIONS", "TRACE"};
+extern const char *HTTP_REQ_HEADER_STRS[];
 
-const char *HEADER_TYPE_STRS[NUM_REQ_HEADERS] = {
-    "Cache-Control",
-    "Connection",
-    "Content-Encoding",
-    "Content-Length",
-    "Content-MD5",
-    "Content-Type",
-    "Date",
-    "Pragma",
-    "Trailer",
-    "Transfer-Encoding",
-    "Upgrade",
-    "Via",
-    "Warning",
-    "A-IM",
-    "Accept",
-    "Accept-Charset",
-    "Accept-Datetime",
-    "Accept-Encoding",
-    "Accept-Language",
-    "Access-Control-Request-Method",
-    "Access-Control-Request-Headers",
-    "Authorization",
-    "Cookie",
-    "Expect",
-    "Forwarded",
-    "From",
-    "Host",
-    "HTTP2-Settings",
-    "If-Match",
-    "If-Modified-Since",
-    "If-None-Match",
-    "If-Range",
-    "If-Unmodified-Since",
-    "Max-Forwards",
-    "Origin",
-    "Prefer",
-    "Proxy-Autorization",
-    "Range",
-    "Referer",
-    "TE",
-    "User-Agent"};
+extern const char *HTTP_VERSION_STRS[];
+extern const char *HTTP_METHOD_STRS[];
 
-const char *HTTP_VERSION_STRS[] = {"1.0", "1.1", "2", "3"};
-
-char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE, char *req);
+char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *req);
 
 HTTP_REQUEST parseRequest(char *s) {
 
@@ -61,10 +18,11 @@ HTTP_REQUEST parseRequest(char *s) {
   HTTP_REQUEST req = {0};
   req.method = -1;
 
-  for (uint i = 0; i < sizeof(METHOD_STRS) / sizeof(const char *); i++) {
-    if (memcmp(METHOD_STRS[i], s, strlen(METHOD_STRS[i])) == 0) {
+  for (uint i = 0; i < NUM_HTTP_METHODS; i++) {
+    const char *m_str = HTTP_METHOD_STRS[i];
+    if (memcmp(m_str, s, strlen(m_str)) == 0) {
       req.method = i;
-      s += strlen(METHOD_STRS[i]);
+      s += strlen(m_str);
       break;
     }
   }
@@ -108,10 +66,11 @@ HTTP_REQUEST parseRequest(char *s) {
   s += 5;
 
   req.version = -1;
-  for (uint i = 0; i < sizeof(HTTP_VERSION_STRS) / sizeof(char *); i++) {
-    if (!memcmp(HTTP_VERSION_STRS[i], s, strlen(HTTP_VERSION_STRS[i]))) {
+  for (uint i = 0; i < NUM_HTTP_VERSIONS; i++) {
+    const char *v_str = HTTP_VERSION_STRS[i];
+    if (!memcmp(v_str, s, strlen(v_str))) {
       req.version = i;
-      s += strlen(HTTP_VERSION_STRS[i]);
+      s += strlen(v_str);
       break;
     }
   }
@@ -132,7 +91,7 @@ HTTP_REQUEST parseRequest(char *s) {
   }
   s++;
 
-  for (uint i = 0; i < NUM_REQ_HEADERS; i++) {
+  for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
     req.header[i] = getHeader(i, s);
   }
 
@@ -172,7 +131,7 @@ HTTP_REQUEST parseRequest(char *s) {
 
 char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *req) {
 
-  const char *str = HEADER_TYPE_STRS[type];
+  const char *str = HTTP_REQ_HEADER_STRS[type];
   uint len = strlen(str);
 
   char *val = NULL;
@@ -227,12 +186,12 @@ char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *req) {
 }
 
 void printRequest(HTTP_REQUEST req) {
-  printf("%s %s HTTP/%s\n", METHOD_STRS[req.method], req.path,
+  printf("%s %s HTTP/%s\n", HTTP_METHOD_STRS[req.method], req.path,
          HTTP_VERSION_STRS[req.version]);
 
-  for (uint i = 0; i < NUM_REQ_HEADERS; i++) {
+  for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
     if (req.header[i]) {
-      printf("%s : %s\n", HEADER_TYPE_STRS[i], req.header[i]);
+      printf("%s : %s\n", HTTP_REQ_HEADER_STRS[i], req.header[i]);
     }
   }
 

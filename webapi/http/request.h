@@ -2,7 +2,7 @@
 
 #include <stdlib.h>
 
-#include "http_constants.h"
+#include "constants.h"
 
 typedef enum http_req_err {
   NO_ERR = 0,
@@ -16,7 +16,7 @@ typedef struct http_request {
   HTTP_VERSION version;
   char *path;
 
-  char *header[NUM_REQ_HEADERS];
+  char *header[NUM_HTTP_REQ_HEADERS];
 
   char *body;
 
