@@ -91,19 +91,37 @@ HTTP_REQUEST parse_http_1_request(char *s) {
 
   // Headers
   {
-    for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
-      req.header[i] = getHeader(i, s);
+
+    // getting headers length
+    uint len;
+    {
+      for (len = 0;; len++) {
+        if (((s[len] == '\r' && s[len + 1] == '\n') || s[len] == '\n') &&
+            s[len - 1] == '\n') {
+          break;
+        }
+        if (s[0] == 0) {
+          ERR_RET(H1_ERR_MISSING_LF);
+        }
+      }
     }
 
-    // searching for empty line
-    for (;; s++) {
-      if (((s[0] == '\r' && s[1] == '\n') || s[0] == '\n') && s[-1] == '\n') {
-        break;
-      }
-      if (s[0] == 0) {
-        ERR_RET(H1_ERR_MISSING_LF);
-      }
+    char *headers = malloc(len);
+    if (!headers)
+      ERR_RET(-1);
+
+    memcpy(headers, s, len);
+    headers[len] = 0;
+
+    for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
+      char *h = getHeader(i, headers);
+      if (h != (char *)(-1L))
+        req.header[i] = h;
     }
+
+    free(headers);
+
+    s += len;
   }
 
   // body
@@ -125,7 +143,7 @@ HTTP_REQUEST parse_http_1_request(char *s) {
 #undef ERR_RET
 }
 
-char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *req) {
+char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *s) {
 
   const char *str = HTTP_REQ_HEADER_STRS[type];
   uint len = strlen(str);
@@ -133,49 +151,64 @@ char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *req) {
   char *val = NULL;
   uint val_len = 0;
 
-  for (uint i = 0; req[i] != 0; i++) {
-    if ((i == 0 || req[i - 1] == '\n') && !memcmp(req + i, str, len)) {
-
-      if (req[i] == '\r' || req[i] == '\n')
+  for (uint i = 0; s[i] != 0; i++) {
+    if (i == 0 || s[i - 1] == '\n') {
+      if (s[i] == '\n' || (s[i] == '\r' && s[i] == '\n'))
         break;
-      i += len;
-      while (req[i] == ' ')
-        i++;
-      if (req[i] != ':') {
+      if (s[i] == 1) { // header is obscured -> was already processed
+        i = *(int *)(s + i + 1);
         continue;
       }
-      i++;
-
-      while (req[i] == ' ')
-        i++;
+      // header name
+      if (memcmp(s + i, str, len))
+        continue;
 
       uint start = i;
-
-      while (req[i] != '\r' && req[i] != '\n') {
-        if (req[i] == 0)
-          return NULL;
+      i += len;
+      // optional whitespace
+      while (s[i] == ' ')
         i++;
+      // ':'
+      if (s[i++] != ':') {
+        return (char *)(-1L);
       }
-      uint len = i - start;
 
-      void *tmp = NULL;
-      if (val == NULL) {
-        tmp = malloc(len + 1);
-      } else {
-        tmp = realloc(val, val_len + len + 2);
+      // optional whitespace
+      while (s[i] == ' ')
+        i++;
+
+      uint n = 0;
+      // get value length
+      while (s[i + n] != '\r' && s[i + n] != 0) {
+        n++;
       }
-      if (tmp == NULL) {
-        perror("Out of heap in getHeader()\n");
-        exit(-1);
+      // save value
+      {
+        if (!val) {
+          val = malloc(n + 1);
+          if (!val)
+            return (char *)(-1L);
+        } else {
+          void *tmp = realloc(val, val_len + n + 2);
+          if (!tmp) {
+            return val;
+          }
+          val = tmp;
+          val[val_len] = ',';
+          val_len++;
+        }
+
+        memcpy(val + val_len, s + i, n);
+        val_len += n;
+        val[val_len] = 0;
       }
-      val = tmp;
-      if (val_len > 0) {
-        val[val_len] = ',';
-        val_len++;
+
+      // obscure header
+      {
+        s[start] = 1;
+        i += n;
+        *(int *)(s + start + 1) = i;
       }
-      memcpy(val + val_len, req + start, len);
-      val_len += len;
-      val[val_len] = 0;
     }
   }
   return val;
