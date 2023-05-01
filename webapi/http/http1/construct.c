@@ -30,16 +30,20 @@ char *http1_construct_response(HTTP_RESPONSE *res) {
 #define NEXT(c) s[n++] = (c)
 
     uint n = 0;
-    NEXT('H');
-    NEXT('T');
-    NEXT('T');
-    NEXT('P');
-    NEXT('/');
-    NEXT('1');
-    NEXT('.');
-    NEXT(res->version == HTTP1_0 ? '0' : '1');
 
-    NEXT(' ');
+    // Version
+    {
+      NEXT('H');
+      NEXT('T');
+      NEXT('T');
+      NEXT('P');
+      NEXT('/');
+      NEXT('1');
+      NEXT('.');
+      NEXT(res->version == HTTP1_0 ? '0' : '1');
+
+      NEXT(' ');
+    }
 
     // status
     {
@@ -52,50 +56,122 @@ char *http1_construct_response(HTTP_RESPONSE *res) {
     NEXT('\r');
     NEXT('\n');
 
-    for (uint i = 0; i < NUM_HTTP_RES_HEADERS; i++) {
-      if (res->headers[i]) {
-        uint name_len = strlen(HTTP_RES_HEADER_STRS[i]);
-        memcpy(s + n, HTTP_RES_HEADER_STRS[i], name_len);
-        n += name_len;
-        NEXT(':');
-        uint val_len = strlen(res->headers[i]);
-        memcpy(s + n, res->headers[i], val_len);
-        n += val_len;
-        NEXT('\r');
-        NEXT('\n');
+    // Headers
+    {
+      for (uint i = 0; i < NUM_HTTP_RES_HEADERS; i++) {
+        if (res->headers[i]) {
+          uint name_len = strlen(HTTP_RES_HEADER_STRS[i]);
+          memcpy(s + n, HTTP_RES_HEADER_STRS[i], name_len);
+          n += name_len;
+          NEXT(':');
+          uint val_len = strlen(res->headers[i]);
+          memcpy(s + n, res->headers[i], val_len);
+          n += val_len;
+          NEXT('\r');
+          NEXT('\n');
+        }
       }
+      NEXT('\r');
+      NEXT('\n');
     }
-    NEXT('\r');
-    NEXT('\n');
 
     memcpy(s + n, res->body, res->max_body_sz);
     n += res->max_body_sz;
     s[n] = 0;
 #undef NEXT
-    /*
-
-sprintf(s, "HTTP/1.%c %s\r\n", (res->version == HTTP1_0) ? '0' : '1',
-        HTTP_STATUS_STRS[res->status]);
-
-uint n = 11 + strlen(HTTP_STATUS_STRS[res->status]);
-
-for (uint i = 0; i < NUM_HTTP_RES_HEADERS; i++) {
-  if (res->headers[i]) {
-    sprintf(s + n, "%s:%s\r\n", HTTP_RES_HEADER_STRS[i], res->headers[i]);
-    n += 3 + strlen(HTTP_RES_HEADER_STRS[i]) + strlen(res->headers[i]);
   }
+
+  return s;
 }
 
-s[n++] = '\r';
-s[n++] = '\n';
+char *http1_construct_request(HTTP_REQUEST *req) {
 
-memcpy(s + n, res->body, res->max_body_sz);
-n += res->max_body_sz;
-if (n != len) {
-  perror("!!!n = %d; len = %d!!!\n");
-}
-s[n] = 0;
-                                                    */
+  uint len;
+  // length
+  {
+    // [method] [path] HTTP/1.xCRLF (+ CRLF at end of headers + body)
+    len = 14 + strlen(HTTP_METHOD_STRS[req->method]) + strlen(req->path) +
+          req->max_body_len;
+
+    for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
+      if (req->header[i]) {
+        //[header name]:[header val]CRLF
+        len += 3 + strlen(HTTP_REQ_HEADER_STRS[i]) + strlen(req->header[i]);
+      }
+    }
+  }
+
+  char *s = malloc(len + 1);
+
+  // write
+  {
+    uint n = 0;
+#define NEXT(c) s[n++] = (c)
+
+    // Method
+    {
+      const char *m_str = HTTP_METHOD_STRS[req->method];
+      memcpy(s, m_str, strlen(m_str));
+      n += strlen(m_str);
+    }
+
+    NEXT(' ');
+
+    // Path
+    {
+      uint path_len = strlen(req->path);
+      memcpy(s + n, req->path, path_len);
+      n += path_len;
+    }
+
+    NEXT(' ');
+
+    // Version
+    {
+      NEXT('H');
+      NEXT('T');
+      NEXT('T');
+      NEXT('P');
+      NEXT('/');
+      NEXT('1');
+      NEXT('.');
+      NEXT(req.version ? '1' : '0');
+    }
+
+    NEXT('\r');
+    NEXT('\n');
+
+    // Headers
+    {
+      for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
+        if (req->header[i]) {
+          const char *name_str = HTTP_REQ_HEADER_STRS[i];
+          uint name_len = strlen(name_str);
+          memcpy(s + n, name_str, name_len);
+          n += name_len;
+
+          NEXT(':');
+
+          uint val_len = strlen(req->header[i]);
+          memcpy(s + n, req->header[i], val_len);
+          n += val_len;
+
+          NEXT('\r');
+          NEXT('\n');
+        }
+      }
+
+      NEXT('\r');
+      NEXT('\n');
+    }
+
+    // Body
+    {
+      memcpy(s + n, req->body, req->max_body_len);
+      n += req->max_body_len;
+      s[n] = 0;
+    }
+#undef NEXT
   }
 
   return s;
