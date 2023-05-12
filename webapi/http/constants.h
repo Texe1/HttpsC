@@ -94,6 +94,7 @@ typedef enum http_version {
   HTTP1_1,
   HTTP2_0,
   HTTP3_0,
+	HTTP_UNKNOWN_VERSION,
   NUM_HTTP_VERSIONS,
 } HTTP_VERSION;
 

@@ -135,7 +135,7 @@ char *http1_construct_request(HTTP_REQUEST *req) {
       NEXT('/');
       NEXT('1');
       NEXT('.');
-      NEXT(req.version ? '1' : '0');
+      NEXT(req->version ? '1' : '0');
     }
 
     NEXT('\r');

@@ -175,8 +175,5 @@ const char *HTTP_STATUS_STRS[NUM_HTTP_STATUS_CODES] = {
 };
 
 const char *HTTP_VERSION_STRS[NUM_HTTP_VERSIONS] = {
-    "1.0",
-    "1.1",
-    "2",
-    "3",
+    "1.0", "1.1", "2", "3", "x.x",
 };
