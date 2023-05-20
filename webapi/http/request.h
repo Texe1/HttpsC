@@ -2,22 +2,22 @@
 
 #include <stdlib.h>
 
+#include "../../util/string.h"
 #include "constants.h"
 
 typedef struct http_request {
   HTTP_METHOD method;
   HTTP_VERSION version;
-  char *path;
+  STRING path;
 
-  char *header[NUM_HTTP_REQ_HEADERS];
+  STRING header[NUM_HTTP_REQ_HEADERS];
 
-  uint max_body_len;
-  char *body;
+  STRING body;
 
   int err;
 
 } HTTP_REQUEST;
 
-HTTP_REQUEST parseRequest(char *s);
+void print_http_req(HTTP_REQUEST);
 
-void printRequest(HTTP_REQUEST);
+void free_http_req(HTTP_REQUEST *);
