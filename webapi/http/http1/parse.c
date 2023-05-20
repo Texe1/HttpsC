@@ -5,7 +5,7 @@
 
 #include "../constants.h"
 
-char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE, char *);
+STRING getHeader(HTTP_REQ_HEADER_FIELD_TYPE, char *);
 
 HTTP_REQUEST parse_http_1_request(char *s) {
 #define ERR_RET(_ERR)                                                          \
@@ -45,13 +45,11 @@ HTTP_REQUEST parse_http_1_request(char *s) {
       len++;
     }
 
-    req.path = malloc(len + 1);
-    if (req.path == NULL) {
+    req.path = malloc_str(len);
+    if (req.path.c == NULL) {
       ERR_RET(-1);
     }
-    memcpy(req.path, s, len);
-    req.path[len] = 0;
-
+    memcpy(req.path.c, s, len);
     s += len;
 
     while (s[0] == ' ')
@@ -114,8 +112,8 @@ HTTP_REQUEST parse_http_1_request(char *s) {
     headers[len] = 0;
 
     for (uint i = 0; i < NUM_HTTP_REQ_HEADERS; i++) {
-      char *h = getHeader(i, headers);
-      if (h != (char *)(-1L))
+      STRING h = getHeader(i, headers);
+      if (h.len != 0)
         req.header[i] = h;
     }
 
@@ -125,31 +123,17 @@ HTTP_REQUEST parse_http_1_request(char *s) {
   }
 
   // body
-  {
-    uint len = 0;
-    while (s[len++] != 0)
-      ;
-
-    req.body = malloc(len);
-    if (!req.body)
-      ERR_RET(-1);
-
-    memcpy(req.body, s, len);
-
-    req.max_body_len = len - 1;
-  }
+  req.body = str_from_char_ptr(s);
 
   return req;
 #undef ERR_RET
 }
 
-char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *s) {
+STRING getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *s) {
 
-  const char *str = HTTP_REQ_HEADER_STRS[type];
-  uint len = strlen(str);
+  STRING type_str = CONST_STR(HTTP_REQ_HEADER_STRS[type]);
 
-  char *val = NULL;
-  uint val_len = 0;
+  STRING val = {0};
 
   for (uint i = 0; s[i] != 0; i++) {
     if (i == 0 || s[i - 1] == '\n') {
@@ -160,17 +144,17 @@ char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *s) {
         continue;
       }
       // header name
-      if (memcmp(s + i, str, len))
+      if (memcmp(s + i, type_str.c, type_str.len))
         continue;
 
       uint start = i;
-      i += len;
+      i += type_str;
       // optional whitespace
       while (s[i] == ' ')
         i++;
       // ':'
       if (s[i++] != ':') {
-        return (char *)(-1L);
+        return (STRING){0};
       }
 
       // optional whitespace
@@ -184,23 +168,23 @@ char *getHeader(HTTP_REQ_HEADER_FIELD_TYPE type, char *s) {
       }
       // save value
       {
-        if (!val) {
-          val = malloc(n + 1);
-          if (!val)
-            return (char *)(-1L);
+        if (!val.len) {
+          val = str_from_char_ptr_fixed_len(s + i, n);
+          if (!val.len)
+            return (STRING){0};
         } else {
-          void *tmp = realloc(val, val_len + n + 2);
+          void *tmp = realloc(val.c, val.len + n + 2);
           if (!tmp) {
             return val;
           }
-          val = tmp;
-          val[val_len] = ',';
-          val_len++;
-        }
+          val.c = tmp;
+          val.c[val.len] = ',';
+          val.len++;
 
-        memcpy(val + val_len, s + i, n);
-        val_len += n;
-        val[val_len] = 0;
+          memcpy(val.c + val.len, s + i, n);
+					val.len += n;
+					val.c[val.len] = 0;
+        }
       }
 
       // obscure header
